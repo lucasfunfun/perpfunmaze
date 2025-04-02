@@ -1,15 +1,104 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Perpfun Maze - Movement Test</title>
+  <title>Perpfun Maze - Basic Character</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #121212; }
+    body { margin: 0; overflow: hidden; background: #111; }
     canvas { display: block; }
   </style>
 </head>
 <body>
-  <script type="module" src="main.js"></script>
+  <!-- Load Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(10, 20, 10);
+    scene.add(light);
+    const ambient = new THREE.AmbientLight(0x888888);
+    scene.add(ambient);
+
+    // Ground
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 200),
+      new THREE.MeshStandardMaterial({ color: 0x222222 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    // "Character" made of stacked boxes
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 1.2, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x00ffff })
+    );
+    body.position.y = 1.2;
+    group.add(body);
+
+    const head = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.6, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0xff99cc })
+    );
+    head.position.y = 2.1;
+    group.add(head);
+
+    const legs = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.6, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xffffff })
+    );
+    legs.position.y = 0.3;
+    group.add(legs);
+
+    scene.add(group);
+
+    // Initial position
+    group.position.set(0, 0, 0);
+    camera.position.set(0, 3, -6);
+    camera.lookAt(group.position);
+
+    // Movement
+    let currentLane = 0; // -1, 0, 1
+    const laneX = { '-1': -2, '0': 0, '1': 2 };
+    let forward = false;
+    let z = 0;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowLeft' && currentLane > -1) currentLane -= 1;
+      if (e.code === 'ArrowRight' && currentLane < 1) currentLane += 1;
+      if (e.code === 'ArrowUp') forward = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowUp') forward = false;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Movement
+      group.position.x = THREE.MathUtils.lerp(group.position.x, laneX[currentLane], 0.2);
+      if (forward) z += 0.1;
+      group.position.z = z;
+
+      // Camera follows
+      camera.position.z = z - 6;
+      camera.lookAt(group.position.x, 1, group.position.z);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
 </body>
 </html>
