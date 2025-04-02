@@ -1,34 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Perpfun Maze - Basic Character</title>
+  <meta charset="UTF-8" />
+  <title>Perpfun Maze - LIVE BUILD</title>
   <style>
     body { margin: 0; overflow: hidden; background: #111; }
     canvas { display: block; }
   </style>
 </head>
 <body>
-  <!-- Load Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-
   <script>
+    // === SETUP ===
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Lighting
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(10, 20, 10);
-    scene.add(light);
-    const ambient = new THREE.AmbientLight(0x888888);
+    // === LIGHTING ===
+    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 10, 5);
+    scene.add(dirLight);
 
-    // Ground
+    // === GROUND ===
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(10, 200),
       new THREE.MeshStandardMaterial({ color: 0x222222 })
@@ -36,64 +35,64 @@
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    // "Character" made of stacked boxes
-    const group = new THREE.Group();
-
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8, 1.2, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0x00ffff })
-    );
-    body.position.y = 1.2;
-    group.add(body);
-
-    const head = new THREE.Mesh(
-      new THREE.BoxGeometry(0.6, 0.6, 0.6),
-      new THREE.MeshStandardMaterial({ color: 0xff99cc })
-    );
-    head.position.y = 2.1;
-    group.add(head);
+    // === PLAYER MADE OF BLOCKS ===
+    const player = new THREE.Group();
 
     const legs = new THREE.Mesh(
-      new THREE.BoxGeometry(0.5, 0.6, 0.5),
+      new THREE.BoxGeometry(0.6, 0.6, 0.6),
       new THREE.MeshStandardMaterial({ color: 0xffffff })
     );
     legs.position.y = 0.3;
-    group.add(legs);
+    player.add(legs);
 
-    scene.add(group);
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 1.2, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0x00ffcc })
+    );
+    body.position.y = 1.2;
+    player.add(body);
 
-    // Initial position
-    group.position.set(0, 0, 0);
+    const head = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.6, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0xff6699 })
+    );
+    head.position.y = 2.1;
+    player.add(head);
+
+    scene.add(player);
+
+    // === CAMERA ===
     camera.position.set(0, 3, -6);
-    camera.lookAt(group.position);
+    camera.lookAt(player.position);
 
-    // Movement
-    let currentLane = 0; // -1, 0, 1
-    const laneX = { '-1': -2, '0': 0, '1': 2 };
-    let forward = false;
-    let z = 0;
+    // === MOVEMENT ===
+    let lane = 0; // -1, 0, 1
+    const laneX = { "-1": -2, "0": 0, "1": 2 };
+    let forwardPressed = false;
+    let zPos = 0;
 
     document.addEventListener('keydown', (e) => {
-      if (e.code === 'ArrowLeft' && currentLane > -1) currentLane -= 1;
-      if (e.code === 'ArrowRight' && currentLane < 1) currentLane += 1;
-      if (e.code === 'ArrowUp') forward = true;
+      if (e.code === 'ArrowLeft' && lane > -1) lane -= 1;
+      if (e.code === 'ArrowRight' && lane < 1) lane += 1;
+      if (e.code === 'ArrowUp') forwardPressed = true;
     });
 
     document.addEventListener('keyup', (e) => {
-      if (e.code === 'ArrowUp') forward = false;
+      if (e.code === 'ArrowUp') forwardPressed = false;
     });
 
+    // === GAME LOOP ===
     function animate() {
       requestAnimationFrame(animate);
 
       // Movement
-      group.position.x = THREE.MathUtils.lerp(group.position.x, laneX[currentLane], 0.2);
-      if (forward) z += 0.1;
-      group.position.z = z;
+      player.position.x += (laneX[lane] - player.position.x) * 0.2;
+      if (forwardPressed) zPos += 0.1;
+      player.position.z = zPos;
 
       // Camera follows
-      camera.position.z = z - 6;
-      camera.lookAt(group.position.x, 1, group.position.z);
+      camera.position.z = zPos - 6;
+      camera.lookAt(player.position.x, 1.2, player.position.z);
 
       renderer.render(scene, camera);
     }
